@@ -1,4 +1,4 @@
-# fivem-audit
+# 🛡️ fivem-audit
 
 Passive security auditor for FiveM servers. No dependencies, Python 3.8+.
 
