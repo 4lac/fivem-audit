@@ -160,7 +160,10 @@ def scan_remote(target, rules, timeout, meta):
         s.findings.append(Finding("medium", "RES-002",
             f"{len(suspects)} resource name(s) match known leaked-pack keywords.",
             ", ".join(suspects),
-            "Name match is a SUSPICION, not proof. Open these and scan them with local mode."))
+             "Name match is a SUSPICION, not proof - it catches legit resources too "
+            "(e.g. a vehicle folder like 'bufsxun' can look suspicious by name alone). "
+            "Verify each one manually: open it and check the actual code, scan it with "
+            "local mode, or look the name up before acting."))
     s.findings.append(Finding("info", "RES-003",
         f"{total} resources loaded ({len(suspects)} flagged by name).",
         advice="Run local mode on the resources folder for a real code-level check."))
