@@ -171,6 +171,34 @@
       "regex": "discord(app)?\\.com/api/webhooks/",
       "msg": "Hardcoded Discord webhook.",
       "advice": "Confirm the webhook is yours and sends no player data."
+    },
+    {
+      "id": "OBF-003",
+      "severity": "medium",
+      "regex": "string\\.char\\s*\\(\\s*\\d+\\s*(,\\s*\\d+\\s*){8,}\\)",
+      "msg": "Long string.char(...) sequence (hidden string, often a URL or code).",
+      "advice": "Decode the numbers to text and check what it hides."
+    },
+    {
+      "id": "JS-RCE-001",
+      "severity": "critical",
+      "regex": "child_process",
+      "msg": "Node.js child_process: runs OS shell commands from a game script.",
+      "advice": "No normal resource shells out. Treat as compromised unless you added it deliberately."
+    },
+    {
+      "id": "JS-EXE-001",
+      "severity": "high",
+      "regex": "\\beval\\s*\\(|\\bnew\\s+Function\\s*\\(",
+      "msg": "JavaScript eval / new Function: runs code from a string at runtime.",
+      "advice": "If the string is fetched or decoded, treat it as a payload loader."
+    },
+    {
+      "id": "JS-OBF-001",
+      "severity": "medium",
+      "regex": "\\batob\\s*\\(|Buffer\\.from\\s*\\([^)]*[\"']base64[\"']",
+      "msg": "Base64 decoding in JavaScript (hidden content).",
+      "advice": "Decode the value and confirm it is harmless, especially if it feeds eval or a network call."
     }
   ],
   "weights": {
