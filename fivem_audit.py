@@ -21,12 +21,13 @@ import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
 
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 HERE = os.path.dirname(os.path.abspath(__file__))
 SEV_ORDER = {"critical": 4, "high": 3, "medium": 2, "low": 1, "info": 0}
 C = {"critical": "\033[1;95m", "high": "\033[1;91m", "medium": "\033[1;93m",
      "low": "\033[1;94m", "info": "\033[0;90m", "ok": "\033[1;92m",
-     "head": "\033[1;96m", "dim": "\033[0;90m", "bold": "\033[1m", "end": "\033[0m"}
+     "head": "\033[1;96m", "dim": "\033[0;90m", "bold": "\033[1m", "end": "\033[0m",
+     "orange": "\033[38;5;208m", "star": "\033[1;93m", "white": "\033[1;97m"}
 URL_RE = re.compile(r"https?://([a-z0-9.\-]+\.[a-z]{2,})", re.IGNORECASE)
 SCAN_EXT = (".lua", ".js")
 SKIP_DIRS = {"node_modules", "stream", ".git"}
@@ -235,25 +236,27 @@ def scan_local(root, rules, meta):
 
 
 # --------------------------------------------------------------------------- #
-# Scoring + report
+# Report
 # --------------------------------------------------------------------------- #
-def score(findings, weights):
-    pen = sum(weights.get(f.severity, 0) for f in findings if f.severity != "ok")
-    return max(0, 100 - min(pen, 100))
+BANNER = r"""
+  ███████╗██╗██╗   ██╗███████╗███╗   ███╗
+  ██╔════╝██║██║   ██║██╔════╝████╗ ████║
+  █████╗  ██║██║   ██║█████╗  ██╔████╔██║
+  ██╔══╝  ██║╚██╗ ██╔╝██╔══╝  ██║╚██╔╝██║
+  ██║     ██║ ╚████╔╝ ███████╗██║ ╚═╝ ██║
+  ╚═╝     ╚═╝  ╚═══╝  ╚══════╝╚═╝     ╚═╝"""
+
+# Wanted level = the most serious finding, not the sum of all findings
+STARS_FOR = {"critical": 5, "high": 3, "medium": 2, "low": 1}
+TAGS = {"critical": "CRIT", "high": "HIGH", "medium": "MED", "low": "LOW", "info": "INFO", "ok": "OK"}
 
 
-def band(sc):
-    if sc >= 85:
-        return "ok", "LOW RISK"
-    if sc >= 60:
-        return "medium", "MODERATE RISK"
-    if sc >= 35:
-        return "high", "HIGH RISK"
-    return "critical", "CRITICAL RISK"
+def wanted_level(findings):
+    return max((STARS_FOR.get(f.severity, 0) for f in findings), default=0)
 
 
-def hr(ch="-", on=False):
-    return col("dim", ch * WIDTH, on)
+def hr(on):
+    return col("dim", "  " + "─" * (WIDTH - 4), on)
 
 
 def report(mode, target, meta, sections, min_sev, on):
@@ -261,23 +264,21 @@ def report(mode, target, meta, sections, min_sev, on):
     all_f = [f for s in sections for f in s.findings]
     counts = {s: sum(1 for f in all_f if f.severity == s)
               for s in ("critical", "high", "medium", "low")}
-    sc = score(all_f, {"critical": 40, "high": 20, "medium": 8, "low": 3, "info": 0})
-    bkey, blabel = band(sc)
+    stars = wanted_level(all_f)
 
-    print(col("head", "=" * WIDTH, on))
-    print(col("bold", f" FiveM Audit Report  (v{VERSION})", on))
-    print(f" mode: {mode}    target: {target}")
-    print(col("head", "=" * WIDTH, on))
-    for k, v in meta.items():
-        print(f"   {k:<11}: {v}")
-    print(hr("-", on))
+    print(col("orange", BANNER, on) + "  " + col("white", "A U D I T", on)
+          + "  " + col("dim", f"v{VERSION} · REYOF", on))
+    print()
+    for k, v in {"mode": mode, "target": target, **meta}.items():
+        print(f"  {col('dim', f'{k:<10}', on)} {v}")
+    print()
 
-    filled = round(sc / 5)
-    bar = "#" * filled + "." * (20 - filled)
-    print(f"   Risk score : {col(bkey, f'{sc}/100  [{bar}]  {blabel}', on)}")
-    print("   Findings   : " + "  ".join(
-        col(s, f"{s}={n}", on) for s, n in counts.items()))
-    print(col("head", "=" * WIDTH, on))
+    print(hr(on))
+    meter = col("star", "★ " * stars, on) + col("dim", "★ " * (5 - stars), on)
+    level_key = "ok" if stars == 0 else ("critical" if stars >= 5 else "high" if stars >= 3 else "medium")
+    print(f"  {col('white', 'WANTED LEVEL', on)}   {meter}   {col(level_key, f'{stars} STAR' + ('' if stars == 1 else 'S'), on)}")
+    print("  " + col("dim", " · ".join(f"{s} {n}" for s, n in counts.items()), on))
+    print(hr(on))
 
     for sec in sections:
         shown = [f for f in sec.findings
@@ -285,25 +286,29 @@ def report(mode, target, meta, sections, min_sev, on):
         shown.sort(key=lambda f: -SEV_ORDER.get(f.severity, -1))
         if not shown:
             continue
-        print(col("bold", f"\n  {sec.title.upper()}", on))
-        print(hr("-", on))
+        print()
+        print(col("white", f"  ▌ {sec.title.upper()}", on))
         for f in shown:
-            tag = col(f.severity, f"[{f.severity.upper():>8}]", on)
-            print(f"  {tag} {f.rule}  {f.msg}")
+            tag = col(f.severity, f"[ {TAGS.get(f.severity, f.severity.upper()):<4} ]", on)
+            print(f"  {tag}  {f.msg}  {col('dim', f.rule, on)}")
             if f.where:
-                print(f"             {col('dim', f.where, on)}")
+                print(f"            {col('dim', f.where, on)}")
             if f.snippet:
-                print(f"             > {f.snippet}")
+                print(f"            > {f.snippet}")
             if f.advice:
-                print(f"             {col('ok', 'fix:', on)} {f.advice}")
+                print(f"            {col('ok', 'fix:', on)} {f.advice}")
 
-    print(col("head", "\n" + "=" * WIDTH, on))
-    print(col("dim",
-        " Passive audit only. Run against servers you own or are authorized to test.", on))
-    print(col("head", "=" * WIDTH, on))
+    print()
+    print(hr(on))
+    if stars == 0:
+        print(f"  {col('ok', 'ALL CLEAR', on)}  No risky findings. Stay out of trouble.")
+    else:
+        worst = max(all_f, key=lambda f: SEV_ORDER.get(f.severity, 0)).severity
+        print(f"  {col('star', 'WANTED', on)}  Fix the {worst} finding(s) to lose the stars.")
+    print(col("dim", "  Passive audit only · servers you own or are authorized to test", on))
 
-    worst = max((SEV_ORDER.get(f.severity, 0) for f in all_f), default=0)
-    return 2 if worst >= 3 else (1 if worst == 2 else 0)
+    worst_rank = max((SEV_ORDER.get(f.severity, 0) for f in all_f), default=0)
+    return 2 if worst_rank >= 3 else (1 if worst_rank == 2 else 0)
 
 
 def main():
@@ -319,6 +324,13 @@ def main():
     loc = sub.add_parser("local", parents=[common])
     loc.add_argument("path")
     a = ap.parse_args()
+
+    if os.name == "nt":
+        os.system("")                     # turn on ANSI colors in the Windows console
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
 
     rules = load_rules(a.rules)
     on = sys.stdout.isatty() and not a.no_color
