@@ -18,9 +18,22 @@ process turned into this tool.
 
 Two modes:
 - **remote** — reads the server's public endpoints (info / dynamic / players)
-  and checks common admin ports, then prints a report with a 0–100 risk score.
+  and checks common admin ports, then prints a report with a **wanted level**.
 - **local** — static scan of a resources folder (Lua and JavaScript files) for
   backdoor patterns (remote code execution, obfuscation, data exfiltration).
+
+## Wanted level
+
+Like in the game, the report shows 0–5 stars. The level comes from the
+**most serious** finding, not from adding everything up:
+
+| Stars | Meaning |
+|---|---|
+| ★★★★★ | at least one critical finding |
+| ★★★ | at least one high finding |
+| ★★ | at least one medium finding |
+| ★ | low findings only |
+| — | ALL CLEAR |
 
 ## Usage
 
