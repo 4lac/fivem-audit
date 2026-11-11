@@ -16,8 +16,8 @@ process turned into this tool.
 Two modes:
 - **remote** — reads the server's public endpoints (info / dynamic / players)
   and checks common admin ports, then prints a report with a 0–100 risk score.
-- **local** — static scan of a resources folder for backdoor patterns
-  (remote code execution, obfuscation, data exfiltration).
+- **local** — static scan of a resources folder (Lua and JavaScript files) for
+  backdoor patterns (remote code execution, obfuscation, data exfiltration).
 
 ## Usage
 
