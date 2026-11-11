@@ -1,4 +1,7 @@
 # 🛡️ fivem-audit
+<p align="center">
+  <img src="logo.png" alt="fivem-audit logo" width="320"/>
+</p>
 
 A passive security auditor for FiveM servers. It reads only what is already
 exposed — no attacks, no exploitation, no writes to the target.
