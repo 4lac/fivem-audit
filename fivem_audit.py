@@ -200,7 +200,9 @@ def scan_file(path, rel, rules):
                 out.append(Finding(p["severity"], p["id"], p["msg"],
                                    f"{rel}:{no}", p["advice"], line.strip()[:140]))
     text = "".join(lines)
-    if "PerformHttpRequest" in text or "http.request" in text:
+    network_calls = ("PerformHttpRequest", "http.request",            # Lua
+                     "fetch(", "https.request", "https.get", "axios")  # JavaScript
+    if any(call in text for call in network_calls):
         allow = set(rules["allowlist_domains"])
         for no, line in enumerate(lines, 1):
             for dom in URL_RE.findall(line):
