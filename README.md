@@ -1,6 +1,6 @@
 # 🛡️ fivem-audit
 <p align="center">
-  <img src="logo.png" alt="fivem-audit logo" width="320"/>
+  <img src="logo1.png" alt="fivem-audit logo" width="320"/>
 </p>
 
 A passive security auditor for FiveM servers. It reads only what is already
